@@ -1,4 +1,7 @@
 import json
+import nltk
+
+from sklearn.base import BaseEstimator, TransformerMixin
 import plotly
 import pandas as pd
 
@@ -8,11 +11,36 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-from sklearn.externals import joblib
+import joblib
 from sqlalchemy import create_engine
 
 
 app = Flask(__name__)
+
+class StartingVerbExtractor(BaseEstimator, TransformerMixin):
+    """
+    Starting Verb Extractor class
+    
+    This class extract the starting verb of a sentence,
+    creating a new feature for the ML classifier
+    """
+
+    def starting_verb(self, text):
+        sentence_list = nltk.sent_tokenize(text)
+        for sentence in sentence_list:
+            pos_tags = nltk.pos_tag(tokenize(sentence))
+            first_word, first_tag = pos_tags[0]
+            if first_tag in ['VB', 'VBP'] or first_word == 'RT':
+                return True
+        return False
+
+    # Given it is a tranformer we can return the self 
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X_tagged = pd.Series(X).apply(self.starting_verb)
+        return pd.DataFrame(X_tagged)
 
 def tokenize(text):
     tokens = word_tokenize(text)
@@ -26,11 +54,12 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('messages', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("../models/classifier.pkl")
+
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -43,6 +72,14 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
+    # category data for plotting
+    categories =  df[df.columns[4:]]
+    cate_counts = (categories.mean()*categories.shape[0]).sort_values(ascending=False)
+    cate_names = list(cate_counts.index)
+    
+    category_names = df.iloc[:,4:].columns
+    category_boolean = (df.iloc[:,4:] != 0).sum().values
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -61,6 +98,45 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        },
+        # category plotting (Visualization#2)
+        {
+            'data': [
+                Bar(
+                    x=cate_names,
+                    y=cate_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
+                }
+            }
+            
+        },
+        {
+            'data': [
+                Bar(
+                    x=category_names,
+                    y=category_boolean
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category",
+                    'tickangle': 35
                 }
             }
         }

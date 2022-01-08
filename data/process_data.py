@@ -48,18 +48,19 @@ def clean_data(df):
         categories[column] = categories[column].astype("int")
     # remove existing categories column
     df.drop(["categories"],inplace=True,axis=1)
+    df.drop(["original"],inplace=True,axis=1)
     # concatenate the original dataframe with the new `categories` dataframe
     df = pd.concat([df, categories], axis=1)
     # drop duplicates
     df.drop_duplicates(keep = 'first',inplace=True)
-    # drop unwanted columns 
-    df.drop(["original","id","genre"],inplace=True, axis=1)
+    # # drop unwanted columns 
+    # df.drop(["original","id","genre"],inplace=True, axis=1)
     # drop rows with nan values
     df.dropna(inplace=True)
-    # drop child_lone column no message for that
-    df.drop(["child_alone"],inplace=True,axis=1)
+    # # drop child_lone column no message for that
+    # df.drop(["child_alone"],inplace=True,axis=1)
     # we have '2' vale in related columns this might be mistake while entering data making it'1'
-    df['related']=df['related'].map(lambda x: 1 if x == 2 else x)
+    print
     return df
 
 
@@ -91,6 +92,7 @@ def main():
 
         print('Cleaning data...')
         df = clean_data(df)
+        print(f"    Rows:{df.shape[0]}, columns:{df.shape[1]}")
         
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         save_data(df, database_filepath)
