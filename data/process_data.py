@@ -1,15 +1,82 @@
 import sys
-
+import pandas as pd
+from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
-    pass
+    """
+    Returns the pandas DataFrame after merging 2 data sources (csv)
+
+            Parameters:
+                    messages_filepath (str): file path of messages data
+                    categories_filepath (str):  file path of categoriess data
+
+            Returns:
+                    pandas.core.frame.DataFrame after merging 2 files
+    """
+    messages = pd.read_csv(messages_filepath)
+    categories = pd.read_csv(categories_filepath)
+    df = messages.merge(categories, on = 'id')
+    return df
 
 
 def clean_data(df):
-    pass
+    """
+    Returns a clean DataFrame after applying all the necessary cleaning 
+    actions
+
+            Parameters:
+                    df (pandas.core.frame.DataFrame): dataframe that needs to 
+                    be cleaned
+
+            Returns:
+                    pandas.core.frame.DataFrame (cleaned)
+    """
+    # create a dataframe of the 36 individual category columns
+    categories = df["categories"].str.split(";", expand = True)
+    # use this row to extract a list of new column names for categories.
+    # one way is to apply a lambda function that takes everything 
+    # up to the second to last character of each string with slicing
+    row = list(categories.iloc[0])
+    category_colnames = [col.split("-")[0] for col in row]
+    # rename the columns of `categories`
+    categories.columns = category_colnames
+    for column in categories:
+        # set each value to be the last character of the string
+        categories[column] = categories[column].str.strip().str[-1]
+        
+        # convert column from string to numeric
+        categories[column] = categories[column].astype("int")
+    # remove existing categories column
+    df.drop(["categories"],inplace=True,axis=1)
+    # concatenate the original dataframe with the new `categories` dataframe
+    df = pd.concat([df, categories], axis=1)
+    # drop duplicates
+    df.drop_duplicates(keep = 'first',inplace=True)
+    # drop unwanted columns 
+    df.drop(["original","id","genre"],inplace=True, axis=1)
+    # drop rows with nan values
+    df.dropna(inplace=True)
+    # drop child_lone column no message for that
+    df.drop(["child_alone"],inplace=True,axis=1)
+    # we have '2' vale in related columns this might be mistake while entering data making it'1'
+    df['related']=df['related'].map(lambda x: 1 if x == 2 else x)
+    return df
 
 
 def save_data(df, database_filename):
+    """
+    saves data to sqlite datbase
+
+            Parameters:
+                    df (pandas.core.frame.DataFrame): dataframe that needs to 
+                    be stored
+                    database_filename: 
+
+            Returns:
+                    None
+    """
+    engine = create_engine(f'sqlite:///{database_filename}')
+    df.to_sql('messages', engine, index=False)
     pass  
 
 
