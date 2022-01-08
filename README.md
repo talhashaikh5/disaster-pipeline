@@ -4,9 +4,12 @@
 ## Project Description
 In this project, we build a machine learning model to identify messages into multiple classes, messages from differnt sources where collected dusring a disaster and labled in differnt fields like medical_issue, rescue etc. Agenda in this project is to build a model using this data which will help in future to identify what help messages and communiate them to differnt aiding departments.
 We used multioutput classifier to classify messages. randomforestclassifer is used to estemator. After building a classifier we made a web app using flask where we can input a message and get classification results.
-
-
-![Screenshot of Web App]()
+#
+![enter image description here](https://github.com/talhashaikh5/disaster-pipeline/blob/main/images/1.png?raw=true)
+#
+![enter image description here](https://github.com/talhashaikh5/disaster-pipeline/blob/main/images/2.png?raw=true)
+#
+![enter image description here](https://github.com/talhashaikh5/disaster-pipeline/blob/main/images/3.png?raw=true)
 
 ## File Description
 ~~~~~~~
